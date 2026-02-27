@@ -18,7 +18,7 @@ struct ContentView: View {
     @State private var allSamples: [Sample] = []
     @State private var visibleSamples: [Sample] = []
     @State private var index = 0
-
+    
     var currentHeading: Double? {
         guard let s = visibleSamples.last else { return nil }
         
@@ -87,9 +87,23 @@ struct ContentView: View {
                         .font(.system(size: 80, weight: .bold, design: .monospaced))
                 }
             }
+            
             .tabItem {
                 Label("Heading", systemImage: "location.north")
             }
+            
+            // This VStack is testing shapes
+            VStack {
+                Circle()
+                    .fill(.brown)
+                    .frame(height: 600)
+                    
+            }
+            
+            .tabItem {
+                Label("Shapes", systemImage: "square")
+            }
+            
         }
         .onAppear {
             allSamples = loadCSV()
