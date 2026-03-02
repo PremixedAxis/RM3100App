@@ -32,11 +32,28 @@ struct ContentView: View {
         return degrees
     }
 
-
     var body: some View {
         TabView {
             
-            // Tab 1 — Existing View
+            // Tab 1 — Heading and Compass
+            VStack(spacing: 40) {
+                
+                if let heading = currentHeading {
+                    Text(String(format: "%.1f°", heading))
+                        .font(.system(size: 80, weight: .bold, design: .monospaced))
+                    
+                    CompassView(heading: heading)
+                        .frame(width: 300, height: 300)
+                } else {
+                    Text("--")
+                        .font(.system(size: 80, weight: .bold, design: .monospaced))
+                }
+            }
+            .tabItem {
+                Label("Heading", systemImage: "location.north")
+            }
+            
+            // Tab 2 — Existing View
             VStack(spacing: 0) {
                 ZStack(alignment: .topLeading) {
                     TelemetrySceneView(samples: visibleSamples)
@@ -77,41 +94,12 @@ struct ContentView: View {
                 Label("Telemetry", systemImage: "cube")
             }
             
-            // Tab 2 — Heading Only
-            VStack {
-                if let heading = currentHeading {
-                    Text(String(format: "%.1f°", heading))
-                        .font(.system(size: 80, weight: .bold, design: .monospaced))
-                } else {
-                    Text("--")
-                        .font(.system(size: 80, weight: .bold, design: .monospaced))
-                }
-            }
-            
-            .tabItem {
-                Label("Heading", systemImage: "location.north")
-            }
-            
-            // This VStack is testing shapes
-            VStack {
-                Circle()
-                    .fill(.brown)
-                    .frame(height: 600)
-                    
-            }
-            
-            .tabItem {
-                Label("Shapes", systemImage: "square")
-            }
-            
         }
         .onAppear {
             allSamples = loadCSV()
             startStreaming()
         }
     }
-
-
 
     func loadCSV() -> [Sample] {
         guard let url = Bundle.main.url(forResource: "telemetry", withExtension: "csv"),
@@ -145,3 +133,70 @@ struct ContentView: View {
         }
     }
 }
+
+struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.closeSubpath()
+        
+        return path
+    }
+}
+
+struct CompassView: View {
+    var heading: Double
+    
+    var body: some View {
+        ZStack {
+            
+            // Outer circle
+            Circle()
+                .stroke(Color.black, lineWidth: 3)
+            
+            // Cardinal letters
+            GeometryReader { geo in
+                let size = geo.size.width
+                let radius = size / 2
+                
+                ZStack {
+                    Text("N")
+                        .position(x: radius, y: 30)
+                    
+                    Text("E")
+                        .position(x: size - 30, y: radius)
+                    
+                    Text("S")
+                        .position(x: radius, y: size - 30)
+                    
+                    Text("W")
+                        .position(x: 30, y: radius)
+                }
+                .font(.system(size: 24, weight: .bold))
+            }
+            
+            // Tick marks every 30 degrees
+            ForEach(0..<12) { i in
+                Rectangle()
+                    .fill(Color.black)
+                    .frame(width: 2, height: 12)
+                    .offset(y: -140)
+                    .rotationEffect(.degrees(Double(i) * 30))
+            }
+            
+            // Needle (triangle)
+            Triangle()
+                .fill(Color.red)
+                .frame(width: 20, height: 140)
+                .offset(y: -70)
+                // Adjust so 0° = North (top)
+                .rotationEffect(.degrees(heading))
+                .animation(.linear(duration: 0.1), value: heading)
+        }
+    }
+}
+
+
